@@ -1,1 +1,2 @@
-dataFile="../data/example_data.json"
+indexLocation="../data/index.json"
+defaultType="prok"
