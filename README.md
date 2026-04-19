@@ -1,7 +1,7 @@
 ### Commands:
 
 ```
-$ export PYTHONPATH="${PYTHONPATH}:/home/pchytil/pokusy/python/running/"
+$ export PYTHONPATH="${PYTHONPATH}:~/pokusy/python/running/"
 
 $ python3.11 ./src/main.py dates
 
