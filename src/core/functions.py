@@ -17,7 +17,7 @@ def read(data: dict[str, Any], files: list[str], from_: str = "", to_: str = "")
     dt_from: datetime | None = try_parse_date(from_)
     dt_to: datetime | None = try_parse_date(to_)
     if dt_from is None:
-        dt_from = datetime(2024, 1, 1)
+        dt_from = datetime(2020, 1, 1)
     if dt_to is None:
         dt_to = datetime.now()
     file_data: dict[str, dict[str, Any]] = json.load(open(Path(files[0]).resolve()))
@@ -110,7 +110,7 @@ def create_month_summary(data: dict[str, Any], month: str) -> dict[str, Any]:
 def read_index(index_file: Path, data_type: str) -> tuple[list[str], dict[str, list[str]], list[str], list[str], list[str]]:
     index_data = json.load(open(index_file))
     files: list[str] = index_data[data_type]["files"]
-    aggregations: dict[str, list[str]] = index_data[data_type]["aggregations"]
+    aggregations: dict[str, Any] = index_data[data_type]["aggregations"]
     sections: list[str] = index_data[data_type]["sections"]
     dashboard_sections: list[str] = index_data[data_type]["dashboard_sections"]
     dashboard_aggregations: list[str] = index_data[data_type]["dashboard_aggregations"]

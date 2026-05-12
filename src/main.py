@@ -26,7 +26,11 @@ def read_from_config() -> tuple[list[str], dict[str, list[str]], list[str], list
     index_file = config['indexLocation']
     data_type = config['defaultType']
     folder = os.path.dirname(os.path.realpath(__file__))
-    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(Path(folder, index_file), data_type)
+    if Path(index_file).is_absolute() and Path(index_file).is_file() and Path(index_file).exists():
+        file_path = Path(index_file)
+    else:
+        file_path = Path(folder, index_file)
+    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(file_path, data_type)
     return files, aggregations, sections, dashboard_sections, dashboard_aggregations
 
 def main() -> None:
