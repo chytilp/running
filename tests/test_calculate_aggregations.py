@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from src.core.functions import calculate_aggregations, read_index
+from src.model.aggregation_desc import AggregationDesc
 
 ROUND_1: str = "1.round"
 ROUND_2: str = "2.round"
@@ -80,12 +81,12 @@ data_3 = {
     }
 }
 
-def get_aggregations_def() -> dict[str, list[str]]:
-    _, aggregations, _, _, _ = read_index(Path(__file__).parent / "data" / "index.json", "barr")
+def get_aggregations_def() -> dict[str, AggregationDesc]:
+    _, aggregations, _, _, _ = read_index(Path(__file__).parent / "data" / "index.json", "barr", 2)
     return aggregations
 
-def filter_aggregations(aggregations: dict[str, list[str]], wanted: list[str]) -> dict[str, list[str]]:
-    output: dict[str, list[str]] = {}
+def filter_aggregations(aggregations: dict[str, AggregationDesc], wanted: list[str]) -> dict[str, AggregationDesc]:
+    output: dict[str, AggregationDesc] = {}
     for key, value in aggregations.items():
         if key in wanted:
             output[key] = value

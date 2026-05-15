@@ -2,14 +2,15 @@ from typing import Any
 
 from src.core.auxiliary import get_sorted_section_or_aggregation_values
 from src.core.grades import calculate_section_grades, calculate_value_grade
+from src.model.sorting import SortResult
 
 
 def sort_section_or_aggregation(data: dict[str, Any], type_: str, is_aggregagtion: bool, grades: dict[int, tuple[int, int]]
-                                ) -> dict[str, tuple[int, int, int]]:
-    # return attributes - tuple [order, lost, grade]
+                                ) -> dict[str, SortResult]:
+    # return attributes - SortResult dataclass [order, lost, grade]
     key = "sections" if not is_aggregagtion else "aggregations"
     sorted_section_values = get_sorted_section_or_aggregation_values(data, type_, key)
-    output: dict[str, tuple[int, int, int]] = {}
+    output: dict[str, SortResult] = {}
     if len(sorted_section_values) == 0:
         return output
 
@@ -30,19 +31,18 @@ def sort_section_or_aggregation(data: dict[str, Any], type_: str, is_aggregagtio
         lost = value - first
         grade = calculate_value_grade(value, grades)
 
-        output[date] = (order, lost, grade)
+        output[date] = SortResult(order=order, lost=lost, grade=grade)
 
     return output
 
 
 def update_section_or_aggregation_data(data: dict[str, Any], type_: str, is_aggregation: bool,
-                                       sort_result: dict[str, tuple[int, int, int]]) -> dict[str, Any]:
+                                       sort_result: dict[str, SortResult]) -> dict[str, Any]:
     key = "sections" if not is_aggregation else "aggregations"
     root = data["trainings"]
     for date, value in sort_result.items():
-        order, lost, grade = value
         sub_root = root[date][key][type_]
-        sub_root["order"] = order
-        sub_root["lost"] = lost
-        sub_root["grade"] = grade
+        sub_root["order"] = value.order
+        sub_root["lost"] = value.lost
+        sub_root["grade"] = value.grade
     return data

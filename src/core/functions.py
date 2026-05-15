@@ -9,6 +9,7 @@ from src.core.auxiliary import try_parse_date, parse_date, intervals_to_sec
 from src.core.grades import calculate_grades, update_section_or_aggregation_grades
 from src.core.sorting import sort_section_or_aggregation, update_section_or_aggregation_data
 from src.core.data_module import data as original_data
+from src.model.aggregation_desc import AggregationDesc, Filter
 from src.utils.time import to_sec
 
 
@@ -67,7 +68,7 @@ def filter_(data: dict[str, Any], from_: str = "", to_: str = "") -> dict[str, A
     return new_data
 
 
-def calculate_aggregations(data: dict[str, Any], aggregation_types: dict[str, list[str]]) -> dict[str, Any]:
+def calculate_aggregations(data: dict[str, Any], aggregation_types: dict[str, Any]) -> dict[str, Any]:
     new_data: dict[str, Any] = deepcopy(data)
     for aggregation in aggregation_types.keys():
         for training_key, training in new_data["trainings"].items():
@@ -107,10 +108,33 @@ def create_month_summary(data: dict[str, Any], month: str) -> dict[str, Any]:
     return data
 
 
-def read_index(index_file: Path, data_type: str) -> tuple[list[str], dict[str, list[str]], list[str], list[str], list[str]]:
+def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list[str], dict[str, Any], list[str], list[str], list[str]]:
     index_data = json.load(open(index_file))
     files: list[str] = index_data[data_type]["files"]
-    aggregations: dict[str, Any] = index_data[data_type]["aggregations"]
+    if version == 1:
+        aggregations: dict[str, Any] = index_data[data_type]["aggregations"]
+    elif version == 2:
+        aggregations: dict[str, AggregationDesc] = {}
+        aggregation_desc: dict[str, Any] = index_data[data_type]["aggregations"]
+        for aag_name, agg_desc in aggregation_desc.items():
+            operations: dict = agg_desc["operations"]
+            filters: list[dict] = operations.get("filters") or []
+            filters_objs: list[Filter] = []
+            for filter_ in filters:
+                filters_objs.append(Filter(
+                    operator=filter_["operator"],
+                    value=filter_["value"],
+                ))
+
+            agg_obj = AggregationDesc(
+                inputs=agg_desc["inputs"],
+                reducer=operations["reducer"],
+                filters=filters_objs,
+            )
+            aggregations[aag_name] = agg_obj
+    else:
+        raise Exception(f"Unknown version of aggregation description: {version}")
+
     sections: list[str] = index_data[data_type]["sections"]
     dashboard_sections: list[str] = index_data[data_type]["dashboard_sections"]
     dashboard_aggregations: list[str] = index_data[data_type]["dashboard_aggregations"]

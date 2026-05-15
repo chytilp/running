@@ -10,9 +10,10 @@ from src.core.functions import read, filter_, calculate_aggregations, sort_secti
 from src.core.data_module import data
 from src.core.menu_funcs import get_date, get_dates, get_section, get_aggregation, get_grades, get_compare, \
     get_dashboard, get_top
+from src.model.index_data import IndexData
 
 
-def prepare_data(files: list[str], aggregations: dict[str, list[str]], sections: list[str], from_: str, to_: str
+def prepare_data(files: list[str], aggregations: dict[str, Any], sections: list[str], from_: str, to_: str
                  ) -> dict[str, Any]:
     new_data = read(data, files)
     new_data = filter_(new_data, from_=from_, to_=to_)
@@ -21,20 +22,28 @@ def prepare_data(files: list[str], aggregations: dict[str, list[str]], sections:
     new_data = sort_sections(new_data, sections)
     return sort_aggregations(new_data, aggregations_)
 
-def read_from_config() -> tuple[list[str], dict[str, list[str]], list[str], list[str], list[str]]:
+def read_from_config(version: int = 1) -> IndexData:
     config = toml.load("./src/config.toml")
     index_file = config['indexLocation']
     data_type = config['defaultType']
     folder = os.path.dirname(os.path.realpath(__file__))
-    if Path(index_file).is_absolute() and Path(index_file).is_file() and Path(index_file).exists():
-        file_path = Path(index_file)
+    index_path: Path = Path(index_file).expanduser()
+    if index_path.is_absolute() and index_path.is_file() and index_path.exists():
+        file_path = index_path
     else:
         file_path = Path(folder, index_file)
-    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(file_path, data_type)
-    return files, aggregations, sections, dashboard_sections, dashboard_aggregations
+    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(file_path, data_type, version)
+    return IndexData(
+        version=version,
+        files=files,
+        aggregations=aggregations,
+        sections=sections,
+        dashboard_sections=dashboard_sections,
+        dashboard_aggregations=dashboard_aggregations,
+    )
 
 def main() -> None:
-    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_from_config()
+    index_data: IndexData = read_from_config(version=2)
 
     parser = argparse.ArgumentParser(prog='simple_example')
     sub_parsers = parser.add_subparsers(help='sub-command help')
@@ -79,8 +88,9 @@ def main() -> None:
     parser.add_argument("--end", default="", help="end argument (date)")
     # -------------
     args = parser.parse_args()
-    new_data = prepare_data(files, aggregations, sections, args.start, args.end)
-    args.func(data=new_data, arguments=args, sections=dashboard_sections, aggregations=dashboard_aggregations)
+    new_data = prepare_data(index_data.files, index_data.aggregations, index_data.sections, args.start, args.end)
+    args.func(data=new_data, arguments=args, sections=index_data.dashboard_sections,
+              aggregations=index_data.dashboard_aggregations)
 
 if __name__ == "__main__":
     main()

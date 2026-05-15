@@ -41,14 +41,6 @@ def calculate_value_grade(value: int, grades: dict[int, tuple[int, int]]) -> int
             return grade_num
     return None
 
-# def get_key_by_type(type_: SectionType | AggregationType) -> str:
-#     if isinstance(type_, AggregationType):
-#         return "aggregation_grades"
-#     elif isinstance(type_, SectionType):
-#         return "section_grades"
-#     else:
-#         raise ValueError(f"Unsupported type {type_}")
-
 
 def update_section_or_aggregation_grades(data: dict[str, Any], type_: str, is_aggregation: bool, grades: dict[int, tuple[int, int]]) -> dict[str, Any]:
     key = "section_grades" if not is_aggregation else "aggregation_grades"

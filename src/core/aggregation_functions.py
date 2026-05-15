@@ -1,5 +1,7 @@
 from typing import Any, Protocol
 
+from src.model.aggregation_desc import AggregationDesc
+
 
 def _sum_sections(data: dict[str, Any], training: str, sections: list[str]) -> tuple[bool, int]:
     sections_data: dict = data["trainings"][training]["sections"]
@@ -9,6 +11,16 @@ def _sum_sections(data: dict[str, Any], training: str, sections: list[str]) -> t
             return False, 0
         inputs.append(data["trainings"][training]["sections"][input_section]["value"])
     return True, sum(inputs)
+
+
+def _load_data(data: dict[str, Any], training: str, sections: list[str]) -> tuple[bool, list[int]]:
+    sections_data: dict = data["trainings"][training]["sections"]
+    inputs: list[int] = []
+    for input_section in sections:
+        if input_section not in sections_data.keys():
+            return False, []
+        inputs.append(data["trainings"][training]["sections"][input_section]["value"])
+    return True, inputs
 
 def _sum_intervals(data: dict[str, Any], training: str, indexes: list[int]) -> tuple[bool, int]:
     if "intervals" not in data["trainings"][training].keys():
@@ -28,7 +40,7 @@ class CalculateAggregationFunc(Protocol):
         ...
 
 
-def create_calculate_aggregation(aggregations_def: dict[str, list[str]]) -> CalculateAggregationFunc:
+def create_calculate_aggregation(aggregations_def: dict[str, AggregationDesc]) -> CalculateAggregationFunc:
 
     def prepare_output(ok: bool, result: int) -> dict[str, Any]:
         if not ok:
@@ -39,12 +51,17 @@ def create_calculate_aggregation(aggregations_def: dict[str, list[str]]) -> Calc
         if aggregation_type not in aggregations_def.keys():
             return prepare_output(False, 0)
 
-        sections = aggregations_def[aggregation_type]
+        agg_desc: AggregationDesc = aggregations_def[aggregation_type]
         if aggregation_type.startswith("intervals"):
-            indexes: list[int] = [int(sec.split("/")[1])  for sec in sections]
+            indexes: list[int] = [int(sec.split("/")[1])  for sec in agg_desc.inputs]
             ok, result = _sum_intervals(data, training, indexes)
         else:
-            ok, result = _sum_sections(data, training, sections)
+            result: int = 0
+            ok, inputs_data = _load_data(data, training, agg_desc.inputs)
+            if ok:
+                inputs_data = agg_desc.apply_filters(inputs_data)
+                result = agg_desc.apply_reducer(inputs_data)
+
         return prepare_output(ok, result)
 
     return calculate_aggregation

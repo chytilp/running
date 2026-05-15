@@ -1,6 +1,7 @@
 from src.core.functions import sort_sections, sort_aggregations
 from src.core.grades import calculate_grades
 from src.core.sorting import sort_section_or_aggregation
+from src.model.sorting import SortResult
 
 data: dict = {
     "section_grades": {},
@@ -81,26 +82,33 @@ data_2: dict = {
     }
 }
 
+
+def assert_sort_result(result: SortResult, expected_order: int, expected_lost: int, expected_grade: int) -> None:
+    assert result.order == expected_order
+    assert result.lost == expected_lost
+    assert result.grade == expected_grade
+
+
 def test_only_sort_section_result() -> None:
     # order, lost, grade
     grades = calculate_grades(data, "1.km", False)
-    output: dict[str, tuple[int, int, int]] = sort_section_or_aggregation(data, "1.km",
+    output: dict[str, SortResult] = sort_section_or_aggregation(data, "1.km",
                                                                           False, grades)
-    assert output["2026-02-01"] == (1, 0, 1)
-    assert output["2026-02-04"] == (2, 12, 2)
-    assert output["2026-02-03"] == (3, 20, 3)
-    assert output["2026-02-02"] == (4, 35, 4)
-    assert output["2026-02-05"] == (5, 45, 5)
+    assert_sort_result(output["2026-02-01"], expected_order=1, expected_lost=0, expected_grade=1)
+    assert_sort_result(output["2026-02-04"], expected_order=2, expected_lost=12, expected_grade=2)
+    assert_sort_result(output["2026-02-03"], expected_order=3, expected_lost=20, expected_grade=3)
+    assert_sort_result(output["2026-02-02"], expected_order=4, expected_lost=35, expected_grade=4)
+    assert_sort_result(output["2026-02-05"], expected_order=5, expected_lost=45, expected_grade=5)
 
 def test_only_sort_section_result_same_values() -> None:
     grades = calculate_grades(data_2, "1.km", False)
-    output: dict[str, tuple[int, int, int]] = sort_section_or_aggregation(data_2, "1.km",
+    output: dict[str, SortResult] = sort_section_or_aggregation(data_2, "1.km",
                                                                           False, grades)
-    assert output["2026-02-01"] == (1, 0, 1)
-    assert output["2026-02-03"] == (1, 0, 1)
-    assert output["2026-02-02"] == (3, 15, 4)
-    assert output["2026-02-04"] == (3, 15, 4)
-    assert output["2026-02-05"] == (5, 25, 5)
+    assert_sort_result(output["2026-02-01"], expected_order=1, expected_lost=0, expected_grade=1)
+    assert_sort_result(output["2026-02-03"], expected_order=1, expected_lost=0, expected_grade=1)
+    assert_sort_result(output["2026-02-02"], expected_order=3, expected_lost=15, expected_grade=4)
+    assert_sort_result(output["2026-02-04"], expected_order=3, expected_lost=15, expected_grade=4)
+    assert_sort_result(output["2026-02-05"], expected_order=5, expected_lost=25, expected_grade=5)
 
 
 def test_sort_sections() -> None:

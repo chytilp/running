@@ -9,7 +9,11 @@ $ python3.11 ./src/main.py date 2026-04-09
 
 $ python3.11 ./src/main.py section 1.km
 
+$ python3.11 ./src/main.py --mark 2026-02-24 section 1.km
+
 $ python3.11 ./src/main.py aggregation total
+
+$ python3.11 ./src/main.py --mark 2026-02-24 aggregation total
 
 $ python3.11 ./src/main.py grades --section 1.km
 
