@@ -5,11 +5,11 @@ from typing import Any
 from copy import deepcopy
 
 from src.core.aggregation_functions import create_calculate_aggregation
-from src.core.auxiliary import try_parse_date, parse_date, intervals_to_sec
+from src.core.auxiliary import try_parse_date, parse_date, intervals_to_sec, get_sorted_section_or_aggregation_values
 from src.core.grades import calculate_grades, update_section_or_aggregation_grades
-from src.core.sorting import sort_section_or_aggregation, update_section_or_aggregation_data
+from src.core.sorting import compare_section_or_aggregation, update_section_or_aggregation_data
 from src.core.data_module import data as original_data
-from src.model.aggregation_desc import AggregationDesc, Filter
+from src.model.aggregation_desc import AggregationDesc, Filter, SortDefinition
 from src.utils.time import to_sec
 
 
@@ -83,23 +83,33 @@ def calculate_aggregations(data: dict[str, Any], aggregation_types: dict[str, An
 
 def sort_sections(data: dict[str, Any], sections: list[str]) -> dict[str, Any]:
     new_data: dict[str, Any] = deepcopy(data)
-    is_aggregation: bool = False
     for section in sections:
-        grades = calculate_grades(data, section, is_aggregation)
-        new_data = update_section_or_aggregation_grades(new_data, section, is_aggregation, grades)
-        sort_result = sort_section_or_aggregation(new_data, section, is_aggregation, grades)
-        new_data = update_section_or_aggregation_data(new_data, section, is_aggregation, sort_result)
+        new_data = sort_section(new_data, section)
     return new_data
 
 
-def sort_aggregations(data: dict[str, Any], aggregations: list[str]) -> dict[str, Any]:
+def sort_aggregations(data: dict[str, Any], aggregations: list[AggregationDesc]) -> dict[str, Any]:
     new_data: dict[str, Any] = deepcopy(data)
-    is_aggregation: bool = True
     for aggregation in aggregations:
-        grades = calculate_grades(data, aggregation, is_aggregation)
-        new_data = update_section_or_aggregation_grades(new_data, aggregation, is_aggregation, grades)
-        sort_result = sort_section_or_aggregation(new_data, aggregation, is_aggregation, grades)
-        new_data = update_section_or_aggregation_data(new_data, aggregation, is_aggregation, sort_result)
+        new_data = sort_aggregation(new_data, aggregation)
+    return new_data
+
+def sort_aggregation(data: dict[str, Any], aggregation: AggregationDesc) -> dict[str, Any]:
+    sorted_agg_values = get_sorted_section_or_aggregation_values(data, aggregation.name, "aggregations",
+                                                                 reverse=aggregation.reverse)
+    grades = calculate_grades(sorted_agg_values, aggregation.reverse)
+    new_data = update_section_or_aggregation_grades(data, aggregation.name, "aggregation_grades", grades.get_dict())
+    sort_result = compare_section_or_aggregation(sorted_agg_values, grades, aggregation.reverse)
+    new_data = update_section_or_aggregation_data(new_data, aggregation.name, "aggregations", sort_result)
+    return new_data
+
+
+def sort_section(data: dict[str, Any], section: str) -> dict[str, Any]:
+    sorted_section_values = get_sorted_section_or_aggregation_values(data, section, "sections")
+    grades = calculate_grades(sorted_section_values)
+    new_data = update_section_or_aggregation_grades(data, section, "section_grades", grades.get_dict())
+    sort_result = compare_section_or_aggregation(sorted_section_values, grades)
+    new_data = update_section_or_aggregation_data(new_data, section, "sections", sort_result)
     return new_data
 
 
@@ -110,6 +120,9 @@ def create_month_summary(data: dict[str, Any], month: str) -> dict[str, Any]:
 
 def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list[str], dict[str, Any], list[str], list[str], list[str]]:
     index_data = json.load(open(index_file))
+    if index_data.get(data_type) is None:
+        raise ValueError(f"Unknown data type: {data_type}")
+
     files: list[str] = index_data[data_type]["files"]
     if version == 1:
         aggregations: dict[str, Any] = index_data[data_type]["aggregations"]
@@ -125,11 +138,16 @@ def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list
                     operator=filter_["operator"],
                     value=filter_["value"],
                 ))
+            sort_def: SortDefinition = SortDefinition.LESS_IS_BEST
+            if agg_desc.get("sort_definition") is not None:
+                sort_def = SortDefinition(agg_desc["sort_definition"])
 
             agg_obj = AggregationDesc(
+                name=aag_name,
                 inputs=agg_desc["inputs"],
                 reducer=operations["reducer"],
                 filters=filters_objs,
+                sort_definition=sort_def,
             )
             aggregations[aag_name] = agg_obj
     else:

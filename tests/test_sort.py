@@ -1,6 +1,8 @@
+from src.core.auxiliary import get_sorted_section_or_aggregation_values
 from src.core.functions import sort_sections, sort_aggregations
 from src.core.grades import calculate_grades
-from src.core.sorting import sort_section_or_aggregation
+from src.core.sorting import compare_section_or_aggregation
+from src.model.aggregation_desc import AggregationDesc, SortDefinition
 from src.model.sorting import SortResult
 
 data: dict = {
@@ -82,6 +84,38 @@ data_2: dict = {
     }
 }
 
+data_3: dict = {
+    "section_grades": {},
+    "aggregation_grades": {},
+    "trainings": {
+        "2026-02-01": {
+            "aggregations": {
+                "under5:30": {"value": 1}
+            }
+        },
+        "2026-02-02": {
+            "aggregations": {
+                "under5:30": {"value": 2}
+            }
+        },
+        "2026-02-03": {
+            "aggregations": {
+                "under5:30": {"value": 3}
+            }
+        },
+        "2026-02-04": {
+            "aggregations": {
+                "under5:30": {"value": 4}
+            }
+        },
+        "2026-02-05": {
+            "aggregations": {
+                "under5:30": {"value": 5}
+            }
+        },
+    }
+}
+
 
 def assert_sort_result(result: SortResult, expected_order: int, expected_lost: int, expected_grade: int) -> None:
     assert result.order == expected_order
@@ -91,9 +125,9 @@ def assert_sort_result(result: SortResult, expected_order: int, expected_lost: i
 
 def test_only_sort_section_result() -> None:
     # order, lost, grade
-    grades = calculate_grades(data, "1.km", False)
-    output: dict[str, SortResult] = sort_section_or_aggregation(data, "1.km",
-                                                                          False, grades)
+    sorted_values = get_sorted_section_or_aggregation_values(data, "1.km", "sections")
+    grades = calculate_grades(sorted_values)
+    output: dict[str, SortResult] = compare_section_or_aggregation(sorted_values, grades)
     assert_sort_result(output["2026-02-01"], expected_order=1, expected_lost=0, expected_grade=1)
     assert_sort_result(output["2026-02-04"], expected_order=2, expected_lost=12, expected_grade=2)
     assert_sort_result(output["2026-02-03"], expected_order=3, expected_lost=20, expected_grade=3)
@@ -101,9 +135,9 @@ def test_only_sort_section_result() -> None:
     assert_sort_result(output["2026-02-05"], expected_order=5, expected_lost=45, expected_grade=5)
 
 def test_only_sort_section_result_same_values() -> None:
-    grades = calculate_grades(data_2, "1.km", False)
-    output: dict[str, SortResult] = sort_section_or_aggregation(data_2, "1.km",
-                                                                          False, grades)
+    sorted_values = get_sorted_section_or_aggregation_values(data_2, "1.km", "sections")
+    grades = calculate_grades(sorted_values)
+    output: dict[str, SortResult] = compare_section_or_aggregation(sorted_values, grades)
     assert_sort_result(output["2026-02-01"], expected_order=1, expected_lost=0, expected_grade=1)
     assert_sort_result(output["2026-02-03"], expected_order=1, expected_lost=0, expected_grade=1)
     assert_sort_result(output["2026-02-02"], expected_order=3, expected_lost=15, expected_grade=4)
@@ -125,7 +159,7 @@ def test_sort_sections() -> None:
 
 
 def test_sort_aggregations() -> None:
-    result = sort_aggregations(data, ["1.round",])
+    result = sort_aggregations(data, [AggregationDesc(name="1.round", reducer="sum"),])
     root = result["trainings"]
     assert root["2026-02-01"]["aggregations"]["1.round"] == {"value": 1440, "order": 4, "lost": 50, "grade": 5}
     assert root["2026-02-04"]["aggregations"]["1.round"] == {"value": 1445, "order": 5, "lost": 55, "grade": 5}
@@ -136,3 +170,18 @@ def test_sort_aggregations() -> None:
     assert result["aggregation_grades"]["1.round"] == {1: (1390, 1401), 2: (1401, 1412), 3: (1412, 1423), 4: (1423, 1434),
                                                        5: (1434, 1446)}
     assert id(data) != id(result)
+
+
+def test_sort_aggregation_more_is_best() -> None:
+    result = sort_aggregations(data_3, [AggregationDesc(name="under5:30", reducer="len", sort_definition=SortDefinition.MORE_IS_BEST), ])
+    root = result["trainings"]
+    assert root["2026-02-01"]["aggregations"]["under5:30"] == {"value": 1, "order": 5, "lost": 4, "grade": 5}
+    assert root["2026-02-02"]["aggregations"]["under5:30"] == {"value": 2, "order": 4, "lost": 3, "grade": 4}
+    assert root["2026-02-03"]["aggregations"]["under5:30"] == {"value": 3, "order": 3, "lost": 2, "grade": 3}
+    assert root["2026-02-04"]["aggregations"]["under5:30"] == {"value": 4, "order": 2, "lost": 1, "grade": 2}
+    assert root["2026-02-05"]["aggregations"]["under5:30"] == {"value": 5, "order": 1, "lost": 0, "grade": 1}
+    assert "under5:30" in list(result["aggregation_grades"].keys())
+    assert result["aggregation_grades"]["under5:30"] == {1: (5, 4), 2: (4, 3), 3: (3, 2),
+                                                       4: (2, 1),
+                                                       5: (1, 0)}
+    assert id(data_3) != id(result)

@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 
+from src.core.auxiliary import get_sorted_section_or_aggregation_values
 from src.core.grades import calculate_section_grades, calculate_value_grade, calculate_grades, \
     update_section_or_aggregation_grades
 
@@ -128,19 +129,22 @@ def test_calculate_grade() -> None:
     assert grade_26_02_05 == 5
 
 def test_calculate_grades_from_app_data() -> None:
-    grades = calculate_grades(data_3, "1.km", False)
+    sorted_values = get_sorted_section_or_aggregation_values(data_3, "1.km", "sections")
+    grades = calculate_grades(sorted_values)
     assert_data_grades(grades)
 
 
 def test_calculate_grades_not_in_data() -> None:
-    grades = calculate_grades(data_3, "2.km", False)
+    sorted_values = get_sorted_section_or_aggregation_values(data_3, "2.km", "sections")
+    grades = calculate_grades(sorted_values)
     assert grades == {}
 
 
 def test_calculate_section_and_update_data() -> None:
     data_: dict[str, Any] = data_3
     section = "1.km"
-    grades = calculate_grades(data_, section, False)
-    new_data = update_section_or_aggregation_grades(data_, section, False, grades)
+    sorted_values = get_sorted_section_or_aggregation_values(data_, section, "sections")
+    grades = calculate_grades(sorted_values)
+    new_data = update_section_or_aggregation_grades(data_, section, "section_grades", grades)
     root = new_data["section_grades"][section]
     assert_data_grades(root)

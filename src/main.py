@@ -10,22 +10,23 @@ from src.core.functions import read, filter_, calculate_aggregations, sort_secti
 from src.core.data_module import data
 from src.core.menu_funcs import get_date, get_dates, get_section, get_aggregation, get_grades, get_compare, \
     get_dashboard, get_top
+from src.model.aggregation_desc import AggregationDesc
 from src.model.index_data import IndexData
 
 
-def prepare_data(files: list[str], aggregations: dict[str, Any], sections: list[str], from_: str, to_: str
+def prepare_data(files: list[str], aggregations: dict[str, AggregationDesc], sections: list[str], from_: str, to_: str
                  ) -> dict[str, Any]:
     new_data = read(data, files)
     new_data = filter_(new_data, from_=from_, to_=to_)
-    aggregations_: list[str] = list(aggregations.keys())
     new_data = calculate_aggregations(new_data, aggregations)
     new_data = sort_sections(new_data, sections)
-    return sort_aggregations(new_data, aggregations_)
+    new_data = sort_aggregations(new_data, list(aggregations.values()))
+    return new_data
 
-def read_from_config(version: int = 1) -> IndexData:
+def read_from_config(route: str, version: int = 1) -> IndexData:
     config = toml.load("./src/config.toml")
     index_file = config['indexLocation']
-    data_type = config['defaultType']
+    data_type = route
     folder = os.path.dirname(os.path.realpath(__file__))
     index_path: Path = Path(index_file).expanduser()
     if index_path.is_absolute() and index_path.is_file() and index_path.exists():
@@ -43,8 +44,6 @@ def read_from_config(version: int = 1) -> IndexData:
     )
 
 def main() -> None:
-    index_data: IndexData = read_from_config(version=2)
-
     parser = argparse.ArgumentParser(prog='simple_example')
     sub_parsers = parser.add_subparsers(help='sub-command help')
     # date command
@@ -86,8 +85,13 @@ def main() -> None:
     parser.add_argument("--mark", default=None, help="mark argument (date)")
     parser.add_argument("--start", default="", help="start argument (date)")
     parser.add_argument("--end", default="", help="end argument (date)")
+    parser.add_argument("--route", help="What route to use [barr,prok, tich, krus...]")
     # -------------
     args = parser.parse_args()
+    index_data: IndexData = read_from_config(version=2, route=args.route)
+    if args.mark:
+        index_data.mark = args.mark
+
     new_data = prepare_data(index_data.files, index_data.aggregations, index_data.sections, args.start, args.end)
     args.func(data=new_data, arguments=args, sections=index_data.dashboard_sections,
               aggregations=index_data.dashboard_aggregations)
