@@ -40,6 +40,7 @@ class AggregationDesc:
     inputs: list[str] = field(default_factory=list)
     filters: list[Filter] = field(default_factory=list)
     sort_definition: SortDefinition = SortDefinition.LESS_IS_BEST
+    time_convertible: bool = True
 
     def apply_reducer(self, values: list[int]) -> int:
         match self.reducer:

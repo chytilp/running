@@ -97,9 +97,9 @@ def sort_aggregations(data: dict[str, Any], aggregations: list[AggregationDesc])
 def sort_aggregation(data: dict[str, Any], aggregation: AggregationDesc) -> dict[str, Any]:
     sorted_agg_values = get_sorted_section_or_aggregation_values(data, aggregation.name, "aggregations",
                                                                  reverse=aggregation.reverse)
-    grades = calculate_grades(sorted_agg_values, aggregation.reverse)
+    grades = calculate_grades(sorted_agg_values, aggregation)
     new_data = update_section_or_aggregation_grades(data, aggregation.name, "aggregation_grades", grades.get_dict())
-    sort_result = compare_section_or_aggregation(sorted_agg_values, grades, aggregation.reverse)
+    sort_result = compare_section_or_aggregation(sorted_agg_values, grades)
     new_data = update_section_or_aggregation_data(new_data, aggregation.name, "aggregations", sort_result)
     return new_data
 
@@ -141,6 +141,9 @@ def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list
             sort_def: SortDefinition = SortDefinition.LESS_IS_BEST
             if agg_desc.get("sort_definition") is not None:
                 sort_def = SortDefinition(agg_desc["sort_definition"])
+            time_convertible: bool = True
+            if agg_desc.get("time_convertible") is not None:
+                time_convertible = agg_desc["time_convertible"]
 
             agg_obj = AggregationDesc(
                 name=aag_name,
@@ -148,6 +151,7 @@ def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list
                 reducer=operations["reducer"],
                 filters=filters_objs,
                 sort_definition=sort_def,
+                time_convertible=time_convertible,
             )
             aggregations[aag_name] = agg_obj
     else:

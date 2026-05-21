@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 
 from src.core.auxiliary import get_sorted_section_or_aggregation_values
-from src.core.grades import calculate_section_grades, calculate_value_grade, calculate_grades, \
-    update_section_or_aggregation_grades
+from src.core.grades import calculate_section_grades, calculate_grades, update_section_or_aggregation_grades
+from src.model.grade import Grades
 
 data: list[tuple[str, int]] = [
     ("2026-02-01", 400),
@@ -84,13 +84,13 @@ data_3: dict[str, Any] = {
 }
 
 
-def assert_data_grades(grades: dict[int, tuple[int, int]]) -> None:
-    assert len(grades) == 5
-    assert grades[1] == (300, 360)
-    assert grades[2] == (360, 420)
-    assert grades[3] == (420, 480)
-    assert grades[4] == (480, 540)
-    assert grades[5] == (540, 601)
+def assert_data_grades(grades: Grades) -> None:
+    assert len(grades.grades) == 5
+    assert grades.grade_1().tuple == (300, 360)
+    assert grades.grade_2().tuple == (360, 420)
+    assert grades.grade_3().tuple == (420, 480)
+    assert grades.grade_4().tuple == (480, 540)
+    assert grades.grade_5().tuple == (540, 601)
 
 
 def test_grades() -> None:
@@ -107,25 +107,25 @@ def test_grades_error_unsorted() -> None:
 def test_grades_other_set() -> None:
     data_sorted = sorted(data_2, key=lambda x: x[1])
     grades = calculate_section_grades(data_sorted)
-    assert len(grades) == 5
-    assert grades[1] == (1390, 1401)
-    assert grades[2] == (1401, 1412)
-    assert grades[3] == (1412, 1423)
-    assert grades[4] == (1423, 1434)
-    assert grades[5] == (1434, 1446)
+    assert len(grades.grades) == 5
+    assert grades.grade_1().tuple == (1390, 1401)
+    assert grades.grade_2().tuple == (1401, 1412)
+    assert grades.grade_3().tuple == (1412, 1423)
+    assert grades.grade_4().tuple == (1423, 1434)
+    assert grades.grade_5().tuple == (1434, 1446)
 
 def test_calculate_grade() -> None:
     data_sorted = sorted(data_2, key=lambda x: x[1])
     grades = calculate_section_grades(data_sorted)
-    grade_26_02_01 = calculate_value_grade(1440, grades)
+    grade_26_02_01 = grades.get_grade_match(1440)
     assert grade_26_02_01 == 5
-    grade_26_02_04 = calculate_value_grade(1445, grades)
+    grade_26_02_04 = grades.get_grade_match(1445)
     assert grade_26_02_04 == 5
-    grade_26_02_03 = calculate_value_grade(1390, grades)
+    grade_26_02_03 = grades.get_grade_match(1390)
     assert grade_26_02_03 == 1
-    grade_26_02_02 = calculate_value_grade(1400, grades)
+    grade_26_02_02 = grades.get_grade_match(1400)
     assert grade_26_02_02 == 1
-    grade_26_02_05 = calculate_value_grade(1435, grades)
+    grade_26_02_05 = grades.get_grade_match(1435)
     assert grade_26_02_05 == 5
 
 def test_calculate_grades_from_app_data() -> None:
@@ -137,7 +137,7 @@ def test_calculate_grades_from_app_data() -> None:
 def test_calculate_grades_not_in_data() -> None:
     sorted_values = get_sorted_section_or_aggregation_values(data_3, "2.km", "sections")
     grades = calculate_grades(sorted_values)
-    assert grades == {}
+    assert grades.empty is True
 
 
 def test_calculate_section_and_update_data() -> None:

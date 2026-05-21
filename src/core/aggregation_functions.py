@@ -45,7 +45,7 @@ def create_calculate_aggregation(aggregations_def: dict[str, AggregationDesc]) -
     def prepare_output(ok: bool, result: int) -> dict[str, Any]:
         if not ok:
             return {}
-        return {"value": result, "order": -1, "lost": -1, "grade": -1}
+        return {"value": result, "order": -1, "lost": -1, "grade": -1, "time_convertible": True}
 
     def calculate_aggregation(data: dict[str, Any], training: str, aggregation_type: str) -> dict[str, Any] | None:
         if aggregation_type not in aggregations_def.keys():

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from src.core.functions import read_index
-from src.model.aggregation_desc import AggregationDesc, Filter
+from src.model.aggregation_desc import AggregationDesc, Filter, SortDefinition
 
 
 def test_old_format() -> None:
@@ -19,10 +19,13 @@ def test_old_format() -> None:
 
 
 def assert_aggregation_desc(agg_desc: AggregationDesc, expected_inputs: list[str], expected_reducer: str,
-                            expected_filters: list[Filter]) -> None:
+                            expected_filters: list[Filter], expected_sort_def: SortDefinition,
+                            expected_time_convertible: bool) -> None:
     assert agg_desc.inputs == expected_inputs
     assert agg_desc.reducer == expected_reducer
     assert agg_desc.filters == expected_filters
+    assert agg_desc.sort_definition == expected_sort_def
+    assert agg_desc.time_convertible == expected_time_convertible
 
 
 def test_new_format() -> None:
@@ -30,10 +33,11 @@ def test_new_format() -> None:
         Path(__file__).parent / "data" / "indexNew.json", "barr", 2)
     assert files == ["./data/example_data_1.json"]
     assert list(aggregations.keys()) == ["1.round", "under6", "woutFilters"]
-    assert_aggregation_desc(aggregations["1.round"], ["1.km", "2.km", "3.km", "4.km"], "sum", [])
+    assert_aggregation_desc(aggregations["1.round"], ["1.km", "2.km", "3.km", "4.km"], "sum", [],
+                            SortDefinition.LESS_IS_BEST, True)
     assert_aggregation_desc(aggregations["under6"],
                             ["1.km", "2.km", "3.km", "4.km", "5.km", "6.km", "7.km", "8.km", "9.km", "10.km"], "len",
-                            [Filter(operator="<", value=360)])
+                            [Filter(operator="<", value=360)], SortDefinition.MORE_IS_BEST, False)
     assert_aggregation_desc(aggregations["woutFilters"],
                             ["1.km", "2.km", "3.km", "4.km", "5.km", "6.km", "7.km", "8.km", "9.km", "10.km"], "max",
-                            [])
+                            [], SortDefinition.LESS_IS_BEST, True)

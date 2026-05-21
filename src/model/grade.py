@@ -6,22 +6,26 @@ class Grade:
     grade: int
     from_: int
     to_: int
-    from_equal: bool = True
-    to_equal: bool = False
-    time_convertible: bool = True
 
+    @property
     def reverse(self) -> bool:
         return self.to_ < self.from_
 
     def match(self, value: int) -> bool:
-        v = self.grade + value
-        print(v)
-        return True
+        if not self.reverse:
+            return self.from_ <= value < self.to_
+        else:
+            return self.from_ >= value > self.to_
+
+    @property
+    def tuple(self) -> tuple[int, int]:
+        return self.from_, self.to_
 
 
 @dataclass
 class Grades:
     grades: dict[int, Grade] = field(default_factory=dict)
+    time_convertible: bool = True
 
     @property
     def empty(self) -> bool:
@@ -30,6 +34,7 @@ class Grades:
     def add(self, grade: Grade) -> None:
         if grade.grade < 1 or grade.grade > 5:
             raise ValueError(f"Grade {grade.grade} is out of range")
+
         self.grades[grade.grade] = grade
 
     def get_grade(self, grade: int) -> Grade | None:
@@ -62,3 +67,12 @@ class Grades:
             5: (self.grade_5().from_, self.grade_5().to_),
         }
 
+    def get_grade_match(self, value: int) -> int | None:
+        grade_numbers = [1, 2, 3, 4, 5]
+        for grade_num in grade_numbers:
+            g = self.grades.get(grade_num)
+            if g is not None:
+                match_ok = g.match(value)
+                if match_ok:
+                    return grade_num
+        return None
