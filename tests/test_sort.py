@@ -148,11 +148,11 @@ def test_only_sort_section_result_same_values() -> None:
 def test_sort_sections() -> None:
     result = sort_sections(data, ["1.km",])
     root = result["trainings"]
-    assert root["2026-02-01"]["sections"]["1.km"] == {"value": 295, "order": 1, "lost": 0, "grade": 1}
-    assert root["2026-02-04"]["sections"]["1.km"] == {"value": 307, "order": 2, "lost": 12, "grade": 2}
-    assert root["2026-02-03"]["sections"]["1.km"] == {"value": 315, "order": 3, "lost": 20, "grade": 3}
-    assert root["2026-02-02"]["sections"]["1.km"] == {"value": 330, "order": 4, "lost": 35, "grade": 4}
-    assert root["2026-02-05"]["sections"]["1.km"] == {"value": 340, "order": 5, "lost": 45, "grade": 5}
+    assert root["2026-02-01"]["sections"]["1.km"] == {"value": 295, "order": 1, "lost": 0, "grade": 1, "time_convertible": True}
+    assert root["2026-02-04"]["sections"]["1.km"] == {"value": 307, "order": 2, "lost": 12, "grade": 2, "time_convertible": True}
+    assert root["2026-02-03"]["sections"]["1.km"] == {"value": 315, "order": 3, "lost": 20, "grade": 3, "time_convertible": True}
+    assert root["2026-02-02"]["sections"]["1.km"] == {"value": 330, "order": 4, "lost": 35, "grade": 4, "time_convertible": True}
+    assert root["2026-02-05"]["sections"]["1.km"] == {"value": 340, "order": 5, "lost": 45, "grade": 5, "time_convertible": True}
     assert "1.km" in list(result["section_grades"].keys())
     assert result["section_grades"]["1.km"] == {1: (295, 304), 2: (304, 313), 3: (313, 322), 4: (322, 331), 5: (331, 341)}
     assert id(data) != id(result)

@@ -68,7 +68,7 @@ def _merge(data_1: dict[tuple[str, str], dict[str, Any]], data_2: dict[tuple[str
     return output
 
 def get_dashboard(data: dict[str, Any], arguments: Any, **kwargs) -> None:
-    sections = kwargs.get("sections", []) + kwargs.get("aggregations", [])
+    sections = kwargs.get("dash_sections", []) + kwargs.get("dash_aggregations", [])
     sections_data: dict[tuple[str, str], dict[str, Any]] = get(data, ["trainings", "*", "sections", "*"])
     aggregations_data = get(data, ["trainings", "*", "aggregations", "*"])
     data_for_print: dict[tuple[str, str], dict[str, Any]] = _merge(sections_data, aggregations_data)

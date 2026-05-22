@@ -43,6 +43,5 @@ def update_section_or_aggregation_data(data: dict[str, Any], type_: str, key: st
         sub_root["order"] = value.order
         sub_root["lost"] = value.lost
         sub_root["grade"] = value.grade
-        if key == "aggregations":
-            sub_root["time_convertible"] = value.time_convertible
+        sub_root["time_convertible"] = value.time_convertible
     return data

@@ -93,8 +93,9 @@ def main() -> None:
         index_data.mark = args.mark
 
     new_data = prepare_data(index_data.files, index_data.aggregations, index_data.sections, args.start, args.end)
-    args.func(data=new_data, arguments=args, sections=index_data.dashboard_sections,
-              aggregations=index_data.dashboard_aggregations)
+    args.func(data=new_data, arguments=args, dash_sections=index_data.dashboard_sections,
+              dash_aggregations=index_data.dashboard_aggregations, sections=index_data.sections,
+              aggregations=list(index_data.aggregations.keys()))
 
 if __name__ == "__main__":
     main()

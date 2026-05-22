@@ -194,8 +194,10 @@ def compare_format(data: dict[str, Any]) -> str:
     s_lost = s_lost if len(s_lost) > 1 else s_lost + " "
     lost: str = f"+{s_lost}"
     s_order: str = str(data["order"]) if data["order"] > 9 else " " + str(data["order"])
-    return f"{to_time(data['value'])} ({s_order}) {lost}"
-
+    if data["time_convertible"]:
+        return f"{to_time(data['value'])} ({s_order}) {lost}"
+    else:
+        return f"{data['value']} ({s_order}) {lost}"
 
 def print_compare(data_date_1: dict[str, Any], data_date_2: dict[str, Any]) -> None:
     print("\t", end="")
