@@ -59,7 +59,10 @@ def print_training(date: str, training: dict[str, Any]) -> None:
     output: str = f"{date}, \nsections:\n{sekce}"
     aggregace: str = ""
     for k, sec in training["aggregations"].items():
-        aggregace += f"{k}: {to_time(sec['value'])} ({sec['order']} / {sec['grade']}), +{sec['lost']}\n"
+        if sec['time_convertible']:
+            aggregace += f"{k}: {to_time(sec['value'])} ({sec['order']} / {sec['grade']}), +{sec['lost']}\n"
+        else:
+            aggregace += f"{k}: {sec['value']} ({sec['order']} / {sec['grade']}), +{sec['lost']}\n"
     output += f"\naggregations:\n{aggregace}\n"
     # if training["intervals"]:
     #     output += "intervals: \n"
@@ -85,7 +88,10 @@ def print_sections(type_: str, data: dict[str, Any], mark: str | None = None) ->
                 print(empty_line)
 
         lost: str = f"+{date_values['lost']}"
-        line = f"{type_}, {date}, {to_time(date_values['value'])} ({date_values['order']} / {date_values['grade']}), {lost}"
+        if date_values['time_convertible']:
+            line = f"{type_}, {date}, {to_time(date_values['value'])} ({date_values['order']} / {date_values['grade']}), {lost}"
+        else:
+            line = f"{type_}, {date}, {date_values['value']} ({date_values['order']} / {date_values['grade']}), {lost}"
         color = get_line_color(line, mark)
         print_color_line(line, color)
         prev_seconds = only_seconds(date_values['value'])
@@ -188,8 +194,10 @@ def compare_format(data: dict[str, Any]) -> str:
     s_lost = s_lost if len(s_lost) > 1 else s_lost + " "
     lost: str = f"+{s_lost}"
     s_order: str = str(data["order"]) if data["order"] > 9 else " " + str(data["order"])
-    return f"{to_time(data['value'])} ({s_order}) {lost}"
-
+    if data["time_convertible"]:
+        return f"{to_time(data['value'])} ({s_order}) {lost}"
+    else:
+        return f"{data['value']} ({s_order}) {lost}"
 
 def print_compare(data_date_1: dict[str, Any], data_date_2: dict[str, Any]) -> None:
     print("\t", end="")

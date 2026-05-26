@@ -1,48 +1,39 @@
 import math
 from typing import Any
 
-from src.core.auxiliary import get_sorted_section_or_aggregation_values
+from src.model.aggregation_desc import AggregationDesc
+from src.model.grade import Grades, Grade
+
+def calculate_grades(sorted_data: list[tuple[str, int]], aggregation: AggregationDesc | None = None) -> Grades:
+    return calculate_section_grades(sorted_data, aggregation)
 
 
-def calculate_grades(data: dict[str, Any], type_: str, is_aggregation: bool) -> dict[int, tuple[int, int]]:
-    key = "sections" if not is_aggregation else "aggregations"
-    sorted_section_values = get_sorted_section_or_aggregation_values(data, type_, key)
-    return calculate_section_grades(sorted_section_values)
-
-
-def calculate_section_grades(sorted_section: list[tuple[str, int]]) -> dict[int, tuple[int, int]]:
+def calculate_section_grades(sorted_section: list[tuple[str, int]], aggregation: AggregationDesc | None = None) -> Grades:
     values = [section_value for date, section_value in sorted_section]
-    if values != sorted(values):
+    if len(values) > 0 and values[0] != max(values) and values[0] != min(values):
         raise ValueError("Section values are not sorted.")
 
     if not values:
-        return {}
+        return Grades()
 
     first: int = values[0]
     last: int = values[-1]
+    reverse = first > last
     range_ = last - first
     step: int = int(math.floor(range_ / 5.0))
-    return {
-        1: (first, first + step),
-        2: (first + step, first + (2 * step)),
-        3: (first + (2 * step), first + (3 * step)),
-        4: (first + (3 * step), first + (4 * step)),
-        5: (first + (4 * step), last + 1),
-    }
+    grades = Grades()
+    if aggregation is not None:
+        grades.time_convertible = aggregation.time_convertible
 
-def calculate_value_grade(value: int, grades: dict[int, tuple[int, int]]) -> int | None:
-    def is_suitable(grade: int) -> bool:
-        min_, max_ = grades[grade]
-        return min_ <= value < max_
-
-    grade_numbers = [1,2,3,4,5]
-    for grade_num in grade_numbers:
-        if is_suitable(grade_num):
-            return grade_num
-    return None
+    grades.add(Grade(grade=1,from_=first, to_=first + step))
+    grades.add(Grade(grade=2, from_=first + step, to_=first + (2 * step)))
+    grades.add(Grade(grade=3, from_=first + (2 * step), to_=first + (3 * step)))
+    grades.add(Grade(grade=4, from_=first + (3 * step), to_=first + (4 * step)))
+    grades.add(Grade(grade=5, from_=first + (4 * step), to_=last - 1 if reverse else last + 1))
+    return grades
 
 
-def update_section_or_aggregation_grades(data: dict[str, Any], type_: str, is_aggregation: bool, grades: dict[int, tuple[int, int]]) -> dict[str, Any]:
-    key = "section_grades" if not is_aggregation else "aggregation_grades"
+def update_section_or_aggregation_grades(data: dict[str, Any], type_: str, key: str, grades: dict[int, tuple[int, int]]) -> dict[str, Any]:
+    # key = "section_grades" if not is_aggregation else "aggregation_grades"
     data[key][type_] = grades
     return data

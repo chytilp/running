@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import operator
+from enum import StrEnum
 from math import ceil
 
 
@@ -27,11 +28,19 @@ class Filter:
         return [value for value in values if self.passed_value_through_filter(value)]
 
 
+class SortDefinition(StrEnum):
+    LESS_IS_BEST = "less_is_best"
+    MORE_IS_BEST = "more_is_best"
+
+
 @dataclass
 class AggregationDesc:
+    name: str
     reducer: str
     inputs: list[str] = field(default_factory=list)
     filters: list[Filter] = field(default_factory=list)
+    sort_definition: SortDefinition = SortDefinition.LESS_IS_BEST
+    time_convertible: bool = True
 
     def apply_reducer(self, values: list[int]) -> int:
         match self.reducer:
@@ -57,3 +66,7 @@ class AggregationDesc:
             for filter_ in self.filters:
                 tmp = filter_.passed_values_through_filter(tmp)
         return tmp
+
+    @property
+    def reverse(self) -> bool:
+        return self.sort_definition == SortDefinition.MORE_IS_BEST
