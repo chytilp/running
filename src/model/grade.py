@@ -43,20 +43,35 @@ class Grades:
 
         return self.grades.get(grade)
 
-    def grade_1(self) -> Grade | None:
-        return self.grades.get(1)
+    def grade_1(self) -> Grade:
+        if 1 not in self.grades:
+            raise ValueError("Grade 1 not found.")
 
-    def grade_2(self) -> Grade | None:
-        return self.grades.get(2)
+        return self.grades[1]
 
-    def grade_3(self) -> Grade | None:
-        return self.grades.get(3)
+    def grade_2(self) -> Grade:
+        if 2 not in self.grades:
+            raise ValueError("Grade 2 not found.")
 
-    def grade_4(self) -> Grade | None:
-        return self.grades.get(4)
+        return self.grades[2]
 
-    def grade_5(self) -> Grade | None:
-        return self.grades.get(5)
+    def grade_3(self) -> Grade:
+        if 3 not in self.grades:
+            raise ValueError("Grade 3 not found.")
+
+        return self.grades[3]
+
+    def grade_4(self) -> Grade:
+        if 4 not in self.grades:
+            raise ValueError("Grade 4 not found.")
+
+        return self.grades[4]
+
+    def grade_5(self) -> Grade:
+        if 5 not in self.grades:
+            raise ValueError("Grade 5 not found.")
+
+        return self.grades[5]
 
     def get_dict(self) -> dict[int, tuple[int, int]]:
         return {

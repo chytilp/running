@@ -1,47 +1,12 @@
 import argparse
-import json
-import os
-from pathlib import Path
-from typing import Any
 
-import toml
-
-from src.core.functions import read, filter_, calculate_aggregations, sort_sections, sort_aggregations, read_index
-from src.core.data_module import data
-from src.core.menu_funcs import get_date, get_dates, get_section, get_aggregation, get_grades, get_compare, \
-    get_dashboard, get_top
-from src.model.aggregation_desc import AggregationDesc
+from src.config import Config, get_config
+from src.core.functions import prepare_data
+from src.core.index import read_index_file
+from src.core.menu_funcs import (get_date, get_dates, get_section, get_aggregation, get_grades, get_compare,
+                                 get_dashboard, get_top)
 from src.model.index_data import IndexData
 
-
-def prepare_data(files: list[str], aggregations: dict[str, AggregationDesc], sections: list[str], from_: str, to_: str
-                 ) -> dict[str, Any]:
-    new_data = read(data, files)
-    new_data = filter_(new_data, from_=from_, to_=to_)
-    new_data = calculate_aggregations(new_data, aggregations)
-    new_data = sort_sections(new_data, sections)
-    new_data = sort_aggregations(new_data, list(aggregations.values()))
-    return new_data
-
-def read_from_config(route: str, version: int = 1) -> IndexData:
-    config = toml.load("./src/config.toml")
-    index_file = config['indexLocation']
-    data_type = route
-    folder = os.path.dirname(os.path.realpath(__file__))
-    index_path: Path = Path(index_file).expanduser()
-    if index_path.is_absolute() and index_path.is_file() and index_path.exists():
-        file_path = index_path
-    else:
-        file_path = Path(folder, index_file)
-    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(file_path, data_type, version)
-    return IndexData(
-        version=version,
-        files=files,
-        aggregations=aggregations,
-        sections=sections,
-        dashboard_sections=dashboard_sections,
-        dashboard_aggregations=dashboard_aggregations,
-    )
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='simple_example')
@@ -88,11 +53,10 @@ def main() -> None:
     parser.add_argument("--route", help="What route to use [barr,prok, tich, krus...]")
     # -------------
     args = parser.parse_args()
-    index_data: IndexData = read_from_config(version=2, route=args.route)
-    if args.mark:
-        index_data.mark = args.mark
+    config: Config = get_config()
+    index_data: IndexData = read_index_file(config=config, version=2, route_name=args.route)
 
-    new_data = prepare_data(index_data.files, index_data.aggregations, index_data.sections, args.start, args.end)
+    new_data = prepare_data(index_data, args.start, args.end)
     args.func(data=new_data, arguments=args, dash_sections=index_data.dashboard_sections,
               dash_aggregations=index_data.dashboard_aggregations, sections=index_data.sections,
               aggregations=list(index_data.aggregations.keys()))

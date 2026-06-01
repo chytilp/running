@@ -1,6 +1,7 @@
 {
   "barr": {
     "type": "barr",
+    "description": "",
     "files": [
       "./data/example_data_1.json"
     ],
@@ -96,12 +97,14 @@
   },
   "tich": {
     "type": "tich",
+    "description": "",
     "files": [
       "./data/example_data_2.json"
     ]
   },
   "prok": {
     "type": "prok",
+    "description": "",
     "files": [
       "./data/example_data_3.json"
     ],

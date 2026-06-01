@@ -9,8 +9,10 @@ from src.core.auxiliary import try_parse_date, parse_date, intervals_to_sec, get
 from src.core.grades import calculate_grades, update_section_or_aggregation_grades
 from src.core.sorting import compare_section_or_aggregation, update_section_or_aggregation_data
 from src.core.data_module import data as original_data
-from src.model.aggregation_desc import AggregationDesc, Filter, SortDefinition
+from src.model.aggregation_desc import AggregationDesc
+from src.model.index_data import IndexData
 from src.utils.time import to_sec
+from src.core.data_module import data
 
 
 def read(data: dict[str, Any], files: list[str], from_: str = "", to_: str = "") -> dict[str, Any]:
@@ -107,6 +109,7 @@ def sort_aggregation(data: dict[str, Any], aggregation: AggregationDesc) -> dict
 def sort_section(data: dict[str, Any], section: str) -> dict[str, Any]:
     sorted_section_values = get_sorted_section_or_aggregation_values(data, section, "sections")
     grades = calculate_grades(sorted_section_values)
+    print(f"section: {section}, grades: {grades}")
     new_data = update_section_or_aggregation_grades(data, section, "section_grades", grades.get_dict())
     sort_result = compare_section_or_aggregation(sorted_section_values, grades)
     new_data = update_section_or_aggregation_data(new_data, section, "sections", sort_result)
@@ -118,46 +121,10 @@ def create_month_summary(data: dict[str, Any], month: str) -> dict[str, Any]:
     return data
 
 
-def read_index(index_file: Path, data_type: str, version: int = 1) -> tuple[list[str], dict[str, Any], list[str], list[str], list[str]]:
-    index_data = json.load(open(index_file))
-    if index_data.get(data_type) is None:
-        raise ValueError(f"Unknown data type: {data_type}")
-
-    files: list[str] = index_data[data_type]["files"]
-    if version == 1:
-        aggregations: dict[str, Any] = index_data[data_type]["aggregations"]
-    elif version == 2:
-        aggregations: dict[str, AggregationDesc] = {}
-        aggregation_desc: dict[str, Any] = index_data[data_type]["aggregations"]
-        for aag_name, agg_desc in aggregation_desc.items():
-            operations: dict = agg_desc["operations"]
-            filters: list[dict] = operations.get("filters") or []
-            filters_objs: list[Filter] = []
-            for filter_ in filters:
-                filters_objs.append(Filter(
-                    operator=filter_["operator"],
-                    value=filter_["value"],
-                ))
-            sort_def: SortDefinition = SortDefinition.LESS_IS_BEST
-            if agg_desc.get("sort_definition") is not None:
-                sort_def = SortDefinition(agg_desc["sort_definition"])
-            time_convertible: bool = True
-            if agg_desc.get("time_convertible") is not None:
-                time_convertible = agg_desc["time_convertible"]
-
-            agg_obj = AggregationDesc(
-                name=aag_name,
-                inputs=agg_desc["inputs"],
-                reducer=operations["reducer"],
-                filters=filters_objs,
-                sort_definition=sort_def,
-                time_convertible=time_convertible,
-            )
-            aggregations[aag_name] = agg_obj
-    else:
-        raise Exception(f"Unknown version of aggregation description: {version}")
-
-    sections: list[str] = index_data[data_type]["sections"]
-    dashboard_sections: list[str] = index_data[data_type]["dashboard_sections"]
-    dashboard_aggregations: list[str] = index_data[data_type]["dashboard_aggregations"]
-    return files, aggregations, sections, dashboard_sections, dashboard_aggregations
+def prepare_data(index_data: IndexData, from_: str, to_: str) -> dict[str, Any]:
+    new_data = read(data, index_data.files)
+    new_data = filter_(new_data, from_=from_, to_=to_)
+    new_data = calculate_aggregations(new_data, index_data.aggregations)
+    new_data = sort_sections(new_data, index_data.sections)
+    new_data = sort_aggregations(new_data, list(index_data.aggregations.values()))
+    return new_data

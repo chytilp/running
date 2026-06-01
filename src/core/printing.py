@@ -150,8 +150,8 @@ def _print_cell_with_length(msg: str, length: int) -> None:
         print(" " + msg + (add_space - 1) * " ", end="")
 
 def _get_month(date: str) -> str:
-    date = date.split("-")
-    return f"{date[0]}-{date[1]}"
+    parts = date.split("-")
+    return f"{parts[0]}-{parts[1]}"
 
 def _print_cell_with_style_and_length(msg: str, length: int, style: CellStyle) -> None:
     add_space = length - len(msg)
@@ -204,14 +204,16 @@ def print_compare(data_date_1: dict[str, Any], data_date_2: dict[str, Any]) -> N
     print(f"\t{data_date_1['date']}", end="")
     print(f"\t{data_date_2['date']}", end="")
     print("\tdiff")
+    diff: int = 0
+    str_diff: str = ""
     for section_type in data_date_1["sections"]:
         print(f"{section_type}\t\t", end="")
         s1 = data_date_1['sections'][section_type]
         s2 = data_date_2['sections'][section_type]
         print(f"{compare_format(s1)}\t", end="")
         print(f"{compare_format(s2)}\t", end="")
-        diff: int = s2["value"] - s1["value"]
-        str_diff: str = str(diff) if diff < 0 else f"+{diff}"
+        diff = s2["value"] - s1["value"]
+        str_diff = str(diff) if diff < 0 else f"+{diff}"
         print(f"{str_diff}", end="")
         print("")
     for agg_type in data_date_1["aggregations"]:
@@ -234,7 +236,7 @@ def print_compare(data_date_1: dict[str, Any], data_date_2: dict[str, Any]) -> N
         else:
             print("\t\t", end="")
         if a1_ok and a2_ok:
-            diff: int = a2["value"] - a1["value"]
-            str_diff: str = str(diff) if diff < 0 else f"+{diff}"
+            diff = a2["value"] - a1["value"]
+            str_diff = str(diff) if diff < 0 else f"+{diff}"
             print(f"{str_diff}", end="")
         print("")

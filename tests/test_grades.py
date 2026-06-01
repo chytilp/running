@@ -93,6 +93,15 @@ def assert_data_grades(grades: Grades) -> None:
     assert grades.grade_5().tuple == (540, 601)
 
 
+def assert_grades_dict(grades: dict[int, tuple[int, int]]) -> None:
+    assert len(grades) == 5
+    assert grades[1] == (300, 360)
+    assert grades[2] == (360, 420)
+    assert grades[3] == (420, 480)
+    assert grades[4] == (480, 540)
+    assert grades[5] == (540, 601)
+
+
 def test_grades() -> None:
     data_sorted = sorted(data, key=lambda x: x[1])
     grades = calculate_section_grades(data_sorted)
@@ -145,6 +154,6 @@ def test_calculate_section_and_update_data() -> None:
     section = "1.km"
     sorted_values = get_sorted_section_or_aggregation_values(data_, section, "sections")
     grades = calculate_grades(sorted_values)
-    new_data = update_section_or_aggregation_grades(data_, section, "section_grades", grades)
+    new_data = update_section_or_aggregation_grades(data_, section, "section_grades", grades.get_dict())
     root = new_data["section_grades"][section]
-    assert_data_grades(root)
+    assert_grades_dict(root)
