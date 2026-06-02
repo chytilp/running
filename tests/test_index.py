@@ -33,7 +33,7 @@ def assert_aggregation_desc(agg_desc: AggregationDesc, expected_inputs: list[str
 def test_new_format() -> None:
     route = RouteModel(name="barr", description="barr")
     index_data = read_index(Path(__file__).parent / "data" / "indexNew.json", route, 2)
-    assert index_data.files == ["./data/example_data_1.json"]
+    assert index_data.files == ["./tests/data/example_data_1.json"]
     assert list(index_data.aggregations.keys()) == ["1.round", "under6", "woutFilters"]
     assert_aggregation_desc(index_data.aggregations["1.round"], ["1.km", "2.km", "3.km", "4.km"], "sum", [],
                             SortDefinition.LESS_IS_BEST, True)

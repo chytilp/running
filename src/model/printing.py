@@ -58,6 +58,14 @@ class CellIdentModel:
     section: str
     is_section: bool
 
+    def __hash__(self) -> int:
+        return hash(self.date + "," + self.section)
+
+    def __eq__(self, other: Any) -> bool:
+        return hash(self) == hash(other)
+
+    def __lt__(self, other: Any):
+        return f"{self.date},{str(self.is_section)},{self.section}" <= f"{other.date},{str(other.is_section)},{other.section}"
 
 @dataclass
 class DashboardModel:
@@ -69,4 +77,4 @@ class DashboardModel:
 @dataclass
 class CompareModel:
     data_1: TrainingModel
-    date_2: TrainingsModel
+    data_2: TrainingModel
