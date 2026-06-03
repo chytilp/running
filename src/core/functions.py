@@ -109,16 +109,10 @@ def sort_aggregation(data: dict[str, Any], aggregation: AggregationDesc) -> dict
 def sort_section(data: dict[str, Any], section: str) -> dict[str, Any]:
     sorted_section_values = get_sorted_section_or_aggregation_values(data, section, "sections")
     grades = calculate_grades(sorted_section_values)
-    print(f"section: {section}, grades: {grades}")
     new_data = update_section_or_aggregation_grades(data, section, "section_grades", grades.get_dict())
     sort_result = compare_section_or_aggregation(sorted_section_values, grades)
     new_data = update_section_or_aggregation_data(new_data, section, "sections", sort_result)
     return new_data
-
-
-def create_month_summary(data: dict[str, Any], month: str) -> dict[str, Any]:
-
-    return data
 
 
 def prepare_data(index_data: IndexData, from_: str, to_: str) -> dict[str, Any]:

@@ -184,8 +184,12 @@ def print_dashboard(data: dict[tuple[str, str], dict[str, Any]], sections: list[
                 _print_cell_with_length("", length)
             else:
                 val = data[(date, col)]
-                _print_cell_with_style_and_length(f"{to_time(val['value'])} ({val['order']})", length,
-                                                  DASHBOARD_PRINT_STYLE[val['grade']])
+                if val['time_convertible']:
+                    _print_cell_with_style_and_length(f"{to_time(val['value'])} ({val['order']})", length,
+                                                      DASHBOARD_PRINT_STYLE[val['grade']])
+                else:
+                    _print_cell_with_style_and_length(f"{val['value']} ({val['order']})", length,
+                                                      DASHBOARD_PRINT_STYLE[val['grade']])
         print("")
 
 

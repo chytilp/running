@@ -46,6 +46,10 @@ def read_index(index_file: Path, route: RouteModel, version: int = 1) -> IndexDa
             if agg_desc.get("time_convertible") is not None:
                 time_convertible = agg_desc["time_convertible"]
 
+            all_inputs_needed: bool = True
+            if agg_desc.get("all_inputs_needed") is not None:
+                all_inputs_needed = agg_desc["all_inputs_needed"]
+
             agg_obj = AggregationDesc(
                 name=aag_name,
                 inputs=agg_desc["inputs"],
@@ -53,6 +57,7 @@ def read_index(index_file: Path, route: RouteModel, version: int = 1) -> IndexDa
                 filters=filters_objs,
                 sort_definition=sort_def,
                 time_convertible=time_convertible,
+                all_inputs_needed=all_inputs_needed,
             )
             aggregations[aag_name] = agg_obj
     else:
