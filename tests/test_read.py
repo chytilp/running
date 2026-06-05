@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import Any
 
 from src.core.functions import read
 
 folder = Path(__file__).parent.resolve()
 
 def test_read_1_8_1() -> None:
-    data = {"trainings": {}}
+    data: dict[str, Any] = {"trainings": {}}
     new_data = read(data, ["./tests/data/data_01.json", ])
     assert len(new_data["trainings"]) == 1
     assert list(new_data["trainings"].keys()) == ["2026-02-14",]
@@ -25,27 +26,27 @@ def test_read_1_8_1() -> None:
 
 
 def test_read_filtered() -> None:
-    data = {"trainings": {}}
+    data: dict[str, Any] = {"trainings": {}}
     new_data = read(data, ["./tests/data/data_02.json"], "2026-02-01", "2026-02-28")
     assert len(new_data["trainings"]) == 2
     assert list(new_data["trainings"].keys()) == ["2026-02-14", "2026-02-10"]
 
 
 def test_read_with_disabled_training() -> None:
-    data = {"trainings": {}}
+    data: dict[str, Any] = {"trainings": {}}
     new_data = read(data, ["./tests/data/data_03.json"])
     assert len(new_data["trainings"]) == 2
     assert list(new_data["trainings"].keys()) == ["2026-02-14", "2026-01-28"]
 
 
 def test_read_data_immutable() -> None:
-    data = {"trainings": {}}
+    data: dict[str, Any] = {"trainings": {}}
     new_data = read(data, ["./tests/data/data_03.json"])
     assert id(data) != id(new_data)
 
 
 def test_read_training_with_interval() -> None:
-    data = {"trainings": {}}
+    data: dict[str, Any] = {"trainings": {}}
     new_data = read(data, ["./tests/data/data_04.json"])
     assert len(new_data["trainings"]) == 1
     root = new_data["trainings"]["2025-11-19"]

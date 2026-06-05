@@ -1,8 +1,9 @@
 {
   "barr": {
     "type": "barr",
+    "description": "",
     "files": [
-      "./data/example_data_1.json"
+      "./tests/data/example_data_1.json"
     ],
     "sections": [
       "1.km",

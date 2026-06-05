@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from src.core.functions import calculate_aggregations, read_index
+from src.core.functions import calculate_aggregations
+from src.core.index import read_index
 from src.model.aggregation_desc import AggregationDesc
+from src.model.printing import RouteModel
 
 ROUND_1: str = "1.round"
 ROUND_2: str = "2.round"
@@ -82,8 +84,9 @@ data_3 = {
 }
 
 def get_aggregations_def() -> dict[str, AggregationDesc]:
-    _, aggregations, _, _, _ = read_index(Path(__file__).parent / "data" / "index.json", "barr", 2)
-    return aggregations
+    route = RouteModel(name="barr", description="barr")
+    index_data = read_index(Path(__file__).parent / "data" / "index.json", route, 2)
+    return index_data.aggregations
 
 def filter_aggregations(aggregations: dict[str, AggregationDesc], wanted: list[str]) -> dict[str, AggregationDesc]:
     output: dict[str, AggregationDesc] = {}

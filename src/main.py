@@ -1,51 +1,15 @@
 import argparse
-import json
-import os
-from pathlib import Path
-from typing import Any
 
-import toml
+from src.core.menu_funcs import (get_date, get_dates, get_section, get_aggregation, get_grades, get_compare,
+                                 get_dashboard, get_top, get_routes)
 
-from src.core.functions import read, filter_, calculate_aggregations, sort_sections, sort_aggregations, read_index
-from src.core.data_module import data
-from src.core.menu_funcs import get_date, get_dates, get_section, get_aggregation, get_grades, get_compare, \
-    get_dashboard, get_top
-from src.model.aggregation_desc import AggregationDesc
-from src.model.index_data import IndexData
-
-
-def prepare_data(files: list[str], aggregations: dict[str, AggregationDesc], sections: list[str], from_: str, to_: str
-                 ) -> dict[str, Any]:
-    new_data = read(data, files)
-    new_data = filter_(new_data, from_=from_, to_=to_)
-    new_data = calculate_aggregations(new_data, aggregations)
-    new_data = sort_sections(new_data, sections)
-    new_data = sort_aggregations(new_data, list(aggregations.values()))
-    return new_data
-
-def read_from_config(route: str, version: int = 1) -> IndexData:
-    config = toml.load("./src/config.toml")
-    index_file = config['indexLocation']
-    data_type = route
-    folder = os.path.dirname(os.path.realpath(__file__))
-    index_path: Path = Path(index_file).expanduser()
-    if index_path.is_absolute() and index_path.is_file() and index_path.exists():
-        file_path = index_path
-    else:
-        file_path = Path(folder, index_file)
-    files, aggregations, sections, dashboard_sections, dashboard_aggregations = read_index(file_path, data_type, version)
-    return IndexData(
-        version=version,
-        files=files,
-        aggregations=aggregations,
-        sections=sections,
-        dashboard_sections=dashboard_sections,
-        dashboard_aggregations=dashboard_aggregations,
-    )
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='simple_example')
     sub_parsers = parser.add_subparsers(help='sub-command help')
+    # routes command
+    parser_routes = sub_parsers.add_parser('routes', help='routes sub-command')
+    parser_routes.set_defaults(func=get_routes)
     # date command
     parser_date = sub_parsers.add_parser('date', help='date sub-command')
     parser_date.add_argument("date", help='date argument')
@@ -77,10 +41,6 @@ def main() -> None:
     parser_top = sub_parsers.add_parser('top', help='top sub-command')
     parser_top.add_argument("top", help='top argument (int)')
     parser_top.set_defaults(func=get_top)
-    # month command
-    # parser_month = sub_parsers.add_parser('month', help='top sub-command')
-    # parser_month.add_argument("month", help='month argument (YYYY-MM-DD)')
-    # parser_month.set_defaults(func=get_month)
     # ------------- global arguments ---
     parser.add_argument("--mark", default=None, help="mark argument (date)")
     parser.add_argument("--start", default="", help="start argument (date)")
@@ -88,14 +48,7 @@ def main() -> None:
     parser.add_argument("--route", help="What route to use [barr,prok, tich, krus...]")
     # -------------
     args = parser.parse_args()
-    index_data: IndexData = read_from_config(version=2, route=args.route)
-    if args.mark:
-        index_data.mark = args.mark
-
-    new_data = prepare_data(index_data.files, index_data.aggregations, index_data.sections, args.start, args.end)
-    args.func(data=new_data, arguments=args, dash_sections=index_data.dashboard_sections,
-              dash_aggregations=index_data.dashboard_aggregations, sections=index_data.sections,
-              aggregations=list(index_data.aggregations.keys()))
+    args.func(arguments=args)
 
 if __name__ == "__main__":
     main()

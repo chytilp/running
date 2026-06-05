@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 from src.model.aggregation_desc import AggregationDesc
 

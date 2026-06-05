@@ -13,13 +13,15 @@ def _sum_sections(data: dict[str, Any], training: str, sections: list[str]) -> t
     return True, sum(inputs)
 
 
-def _load_data(data: dict[str, Any], training: str, sections: list[str]) -> tuple[bool, list[int]]:
+def _load_data(data: dict[str, Any], training: str, sections: list[str], all_inputs_needed: bool) -> tuple[bool, list[int]]:
     sections_data: dict = data["trainings"][training]["sections"]
     inputs: list[int] = []
     for input_section in sections:
-        if input_section not in sections_data.keys():
+        if input_section not in sections_data.keys() and all_inputs_needed:
             return False, []
-        inputs.append(data["trainings"][training]["sections"][input_section]["value"])
+
+        if input_section in sections_data.keys():
+            inputs.append(data["trainings"][training]["sections"][input_section]["value"])
     return True, inputs
 
 def _sum_intervals(data: dict[str, Any], training: str, indexes: list[int]) -> tuple[bool, int]:
@@ -52,12 +54,13 @@ def create_calculate_aggregation(aggregations_def: dict[str, AggregationDesc]) -
             return prepare_output(False, 0)
 
         agg_desc: AggregationDesc = aggregations_def[aggregation_type]
+        result: int = 0
         if aggregation_type.startswith("intervals"):
             indexes: list[int] = [int(sec.split("/")[1])  for sec in agg_desc.inputs]
             ok, result = _sum_intervals(data, training, indexes)
         else:
-            result: int = 0
-            ok, inputs_data = _load_data(data, training, agg_desc.inputs)
+            result = 0
+            ok, inputs_data = _load_data(data, training, agg_desc.inputs, agg_desc.all_inputs_needed)
             if ok:
                 inputs_data = agg_desc.apply_filters(inputs_data)
                 result = agg_desc.apply_reducer(inputs_data)

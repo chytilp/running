@@ -1,78 +1,110 @@
+from dataclasses import dataclass
 from typing import Any
 
 from src.core.data_module import get, filter_sections, filter_aggregations
-from src.core.printing import print_dates, print_training, print_sections, print_dashboard, print_compare
+from src.core.printing import print_routes, print_dates, print_sections, print_training, print_grades, print_dashboard, print_compare
+from src.core.lib_funcs import (get_routes as lib_routes, get_dates as lib_dates, get_date as lib_date,
+                                get_section as lib_section, get_aggregation as lib_aggregation,
+                                get_section_grades as lib_section_grades,
+                                get_aggregation_grades as lib_aggregation_grades,
+                                get_dashboard as lib_dashboard, get_compare as lib_compare,)
+
+from src.model.printing import RouteModel, TrainingsModel, TrainingModel, SectionsModel, GradeModel, DashboardModel, \
+    CompareModel
+
+@dataclass
+class Range:
+    from_: str
+    to_: str
 
 
-def get_dates(data: dict[str, Any], arguments: Any, **kwargs) -> None:
-    dates: list[str] = [date for date in data["trainings"].keys()]
+def _get_from_to(arguments: Any) -> Range:
+    start: str = ""
+    if arguments.start:
+        start = arguments.start.strip()
+    end: str = ""
+    if arguments.end:
+        end = arguments.end.strip()
+    return Range(from_=start, to_=end)
+
+def get_routes(arguments: Any, **kwargs) -> None:
+    routes: list[RouteModel] = lib_routes()
+    print_routes(routes)
+
+
+def get_dates(arguments: Any, **kwargs) -> None:
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
+    dates: TrainingsModel = lib_dates(route)
     print_dates(dates)
 
 
-def get_date(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_date(arguments: Any, **kwargs) -> None:
     if not arguments.date:
         raise ValueError("Date argument must be specified.")
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
+    training: TrainingModel = lib_date(route, arguments.date)
+    print_training(training)
 
-    date_data = get(data, ["trainings", arguments.date])
-    if date_data:
-        print_training(arguments.date, date_data)
-    else:
-        raise ValueError(f"No training data found for {arguments.date}")
 
-
-def get_section(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_section(arguments: Any, **kwargs) -> None:
     if not arguments.section:
         raise ValueError("Section argument must be specified.")
-
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
     section: str = arguments.section.lower()
-    data = get(data, ["trainings", "*", "sections", section])
-    data = dict(sorted(data.items(), key=lambda item: item[1]["order"]))
-    mark = None
+    mark = ""
     if arguments.mark:
         mark = arguments.mark.strip()
-    print_sections(section, data, mark)
+    range_: Range = _get_from_to(arguments)
+    section_data: SectionsModel = lib_section(route, section, from_=range_.from_, to_=range_.to_, mark_date=mark)
+    print_sections(section_data)
 
 
-def get_aggregation(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_aggregation(arguments: Any, **kwargs) -> None:
     if not arguments.aggregation:
         raise ValueError("Aggregation argument must be specified.")
-
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
     aggregation: str = arguments.aggregation.lower()
-    data = get(data, ["trainings", "*", "aggregations", aggregation])
-    data = dict(sorted(data.items(), key=lambda item: item[1]["order"]))
-    mark = None
+    mark = ""
     if arguments.mark:
         mark = arguments.mark.strip()
-    print_sections(aggregation, data, mark)
+    range_: Range = _get_from_to(arguments)
+    agg_data: SectionsModel = lib_aggregation(route, aggregation, from_=range_.from_, to_=range_.to_, mark_date=mark)
+    print_sections(agg_data)
 
 
-def get_grades(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_grades(arguments: Any, **kwargs) -> None:
     if not arguments.section and not arguments.aggregation:
         raise ValueError("At least one of section or aggregation must be specified.")
-
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
+    range_: Range = _get_from_to(arguments)
+    grades: list[GradeModel] = []
     if arguments.section:
         section: str = arguments.section.lower()
-        grades = get(data, ["section_grades", section])
-        print(f"grades {section}: {grades}")
+        grades = lib_section_grades(route, section, from_=range_.from_, to_=range_.to_)
+        print_grades(grades)
     elif arguments.aggregation:
         aggregation: str = arguments.aggregation.lower()
-        grades = get(data, ["aggregation_grades", aggregation])
-        print(f"grades {aggregation}: {grades}")
+        grades = lib_aggregation_grades(route, aggregation, from_=range_.from_, to_=range_.to_)
+        print_grades(grades)
 
 
-def _merge(data_1: dict[tuple[str, str], dict[str, Any]], data_2: dict[tuple[str, str], dict[str, Any]]
-           ) -> dict[tuple[str, str], dict[str, Any]]:
-    output: dict[tuple[str, str], dict[str, Any]] = data_1
-    for (key_1, key_2), value in data_2.items():
-        output[(key_1, key_2)] = value
-    return output
-
-def get_dashboard(data: dict[str, Any], arguments: Any, **kwargs) -> None:
-    sections = kwargs.get("dash_sections", []) + kwargs.get("dash_aggregations", [])
-    sections_data: dict[tuple[str, str], dict[str, Any]] = get(data, ["trainings", "*", "sections", "*"])
-    aggregations_data = get(data, ["trainings", "*", "aggregations", "*"])
-    data_for_print: dict[tuple[str, str], dict[str, Any]] = _merge(sections_data, aggregations_data)
-    print_dashboard(data_for_print, sections, True)
+def get_dashboard(arguments: Any, **kwargs) -> None:
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
+    range_: Range = _get_from_to(arguments)
+    result: DashboardModel = lib_dashboard(route, from_=range_.from_, to_=range_.to_)
+    print_dashboard(result, True)
 
 
 def _prepare_training(data_: dict[str, Any], date: str, sections: list[str], aggregations: list[str]) -> dict[str, Any]:
@@ -81,23 +113,23 @@ def _prepare_training(data_: dict[str, Any], date: str, sections: list[str], agg
     return filter_aggregations(data_1, aggregations)
 
 
-def get_compare(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_compare(arguments: Any, **kwargs) -> None:
     if not arguments.compare:
         raise ValueError("No 2 dates for comparison found.")
-
-    sections: list[str] = kwargs.get("sections", [])
-    aggregations: list[str] = kwargs.get("aggregations", [])
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
     dates = arguments.compare
     dates_list = dates.split(",")
     date_1 = dates_list[0]
     date_2 = dates_list[1]
-    data_1 = _prepare_training(data, date_1, sections, aggregations)
-    data_1["date"] = date_1
-    data_2 = _prepare_training(data, date_2, sections, aggregations)
-    data_2["date"] = date_2
-    print_compare(data_1, data_2)
+    result: CompareModel = lib_compare(route, date_1=date_1, date_2=date_2)
+    print_compare(result)
 
 
-def get_top(data: dict[str, Any], arguments: Any, **kwargs) -> None:
+def get_top(arguments: Any, **kwargs) -> None:
     if not arguments.top:
         raise ValueError("Top argument must be specified.")
+    if not arguments.route:
+        raise ValueError("Route argument must be specified.")
+    route = RouteModel(name=arguments.route)
