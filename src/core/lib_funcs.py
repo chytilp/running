@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.config import Config, get_config
+from src.config import get_config
 from src.core.data_module import get
 from src.core.functions import prepare_data
 from src.core.index import read_index_routes, read_index
@@ -100,11 +100,14 @@ def get_aggregation_grades(route: RouteModel, aggregation_name: str, from_: str 
     return _get_grades(data=data, key="aggregation_grades", section_name=aggregation_name)
 
 
-def get_dashboard(route: RouteModel, from_: str = "", to_: str = "") -> DashboardModel:
+def get_dashboard(route: RouteModel, from_: str = "", to_: str = "", sections: list[str] | None = None,
+                  aggregations: list[str] | None = None) -> DashboardModel:
     config = get_config()
     index_data = read_index(index_file=config.get_index_file_path(), route=route, version=2)
-    sections: list[str] = index_data.dashboard_sections
-    aggregations: list[str] = index_data.dashboard_aggregations
+    if sections is None:
+        sections: list[str] = index_data.dashboard_sections
+    if aggregations is None:
+        aggregations: list[str] = index_data.dashboard_aggregations
     data: dict[str, Any] = prepare_data(index_data=index_data, from_=from_, to_=to_)
     sections_data: dict[tuple[str, str], dict[str, Any]] = get(data, ["trainings", "*", "sections", "*"])
     aggregations_data = get(data, ["trainings", "*", "aggregations", "*"])
@@ -127,8 +130,8 @@ def get_dashboard(route: RouteModel, from_: str = "", to_: str = "") -> Dashboar
     return DashboardModel(data=data, sections=sections, aggregations=aggregations)
 
 
-def get_compare(route: RouteModel, date_1: str, date_2: str, from_: str = "", to_: str = "") -> CompareModel:
-    data: dict[str, Any] = _prepare_data(route=route, from_=from_, to_=to_)
+def get_compare(route: RouteModel, date_1: str, date_2: str) -> CompareModel:
+    data: dict[str, Any] = _prepare_data(route=route, from_="", to_="")
     date1_data = get(data, ["trainings", date_1])
     date1_obj = _get_training_data(data=date1_data, date=date_1)
     date2_data = get(data, ["trainings", date_2])
