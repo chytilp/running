@@ -4,7 +4,6 @@ from src.config import Config, get_config
 from src.core.data_module import get
 from src.core.functions import prepare_data
 from src.core.index import read_index_routes, read_index
-from src.core.menu_funcs import _merge
 from src.model.printing import RouteModel, TrainingsModel, TrainingModel, SectionsModel, SectionModel, GradeModel, \
     DashboardModel, CompareModel, CellIdentModel
 
@@ -13,6 +12,14 @@ def _prepare_data(route: RouteModel, from_: str, to_: str) -> dict[str, Any]:
     config = get_config()
     index_data = read_index(index_file=config.get_index_file_path(), route=route, version=2)
     return prepare_data(index_data=index_data, from_=from_, to_=to_)
+
+
+def _merge(data_1: dict[tuple[str, str], dict[str, Any]], data_2: dict[tuple[str, str], dict[str, Any]]
+           ) -> dict[tuple[str, str], dict[str, Any]]:
+    output: dict[tuple[str, str], dict[str, Any]] = data_1
+    for (key_1, key_2), value in data_2.items():
+        output[(key_1, key_2)] = value
+    return output
 
 
 def get_routes() -> list[RouteModel]:
@@ -93,8 +100,12 @@ def get_aggregation_grades(route: RouteModel, aggregation_name: str, from_: str 
     return _get_grades(data=data, key="aggregation_grades", section_name=aggregation_name)
 
 
-def get_dashboard(route: RouteModel, sections: list[str], aggregations: list[str], from_: str = "", to_: str = "") -> DashboardModel:
-    data: dict[str, Any] = _prepare_data(route=route, from_=from_, to_=to_)
+def get_dashboard(route: RouteModel, from_: str = "", to_: str = "") -> DashboardModel:
+    config = get_config()
+    index_data = read_index(index_file=config.get_index_file_path(), route=route, version=2)
+    sections: list[str] = index_data.dashboard_sections
+    aggregations: list[str] = index_data.dashboard_aggregations
+    data: dict[str, Any] = prepare_data(index_data=index_data, from_=from_, to_=to_)
     sections_data: dict[tuple[str, str], dict[str, Any]] = get(data, ["trainings", "*", "sections", "*"])
     aggregations_data = get(data, ["trainings", "*", "aggregations", "*"])
     all_sections: list[str] = [section for date, section in sections_data.keys()]

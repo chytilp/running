@@ -1,16 +1,15 @@
 import argparse
 
-from src.config import Config, get_config
-from src.core.functions import prepare_data
-from src.core.index import read_index_file
 from src.core.menu_funcs import (get_date, get_dates, get_section, get_aggregation, get_grades, get_compare,
-                                 get_dashboard, get_top)
-from src.model.index_data import IndexData
+                                 get_dashboard, get_top, get_routes)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog='simple_example')
     sub_parsers = parser.add_subparsers(help='sub-command help')
+    # routes command
+    parser_routes = sub_parsers.add_parser('routes', help='routes sub-command')
+    parser_routes.set_defaults(func=get_routes)
     # date command
     parser_date = sub_parsers.add_parser('date', help='date sub-command')
     parser_date.add_argument("date", help='date argument')
@@ -42,10 +41,6 @@ def main() -> None:
     parser_top = sub_parsers.add_parser('top', help='top sub-command')
     parser_top.add_argument("top", help='top argument (int)')
     parser_top.set_defaults(func=get_top)
-    # month command
-    # parser_month = sub_parsers.add_parser('month', help='top sub-command')
-    # parser_month.add_argument("month", help='month argument (YYYY-MM-DD)')
-    # parser_month.set_defaults(func=get_month)
     # ------------- global arguments ---
     parser.add_argument("--mark", default=None, help="mark argument (date)")
     parser.add_argument("--start", default="", help="start argument (date)")
@@ -53,13 +48,7 @@ def main() -> None:
     parser.add_argument("--route", help="What route to use [barr,prok, tich, krus...]")
     # -------------
     args = parser.parse_args()
-    config: Config = get_config()
-    index_data: IndexData = read_index_file(config=config, version=2, route_name=args.route)
-
-    new_data = prepare_data(index_data, args.start, args.end)
-    args.func(data=new_data, arguments=args, dash_sections=index_data.dashboard_sections,
-              dash_aggregations=index_data.dashboard_aggregations, sections=index_data.sections,
-              aggregations=list(index_data.aggregations.keys()))
+    args.func(arguments=args)
 
 if __name__ == "__main__":
     main()
